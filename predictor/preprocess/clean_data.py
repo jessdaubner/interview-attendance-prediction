@@ -179,7 +179,7 @@ def clean_data():
                                 marital_status=row[21],
                                 attendance=row[20])
 
-            if record.client_name:
+            if record.candidate_id:
                 if record.attendance:
                     labeled_data.append(astuple(record))
                 else:

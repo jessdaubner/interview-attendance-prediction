@@ -62,7 +62,7 @@ def create_train_test_datasets(df, test_size):
     X = transform(X)
     Y = df[LABEL].map({'YES': 1, 'NO': 0})
     logger.info('Splitting labeled data into train and test set with {} split'.
-                format(str(int((1 - test_size)) * 100) + '/' + str(int(test_size * 100))))
+                format(str(int((1 - test_size) * 100)) + '/' + str(int(test_size * 100))))
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=test_size,
                                                         stratify=Y,
                                                         random_state=42)
@@ -115,12 +115,15 @@ def calculate_metrics(y_pred, y_true):
     logger.info(len(log_msg) * '-')
 
     accuracy = accuracy_score(y_true, y_pred)
-    logger.info(f'Accuracy: {accuracy}')
+    logger.info(f'Accuracy: {accuracy:3f}')
+    baseline_accuracy = sum(y_true.values) / len(y_true.values)
+    logger.info(f'Baseline Accuracy: {baseline_accuracy:3f}')
     fpr, tpr, thresholds = roc_curve(y_true.values, y_pred, pos_label=1)
     auc_score = auc(fpr, tpr)
-    logger.info(f'AUC: {auc_score:3}')
+    logger.info(f'AUC: {auc_score:3f}')
     avg_precision = average_precision_score(y_true, y_pred)
-    logger.info(f'Average Precision: {avg_precision:3}')
+    logger.info(f'Average Precision: {avg_precision:3f}')
+    logger.info(len(log_msg) * '-')
 
 
 def train_and_evaluate(cross_validate):

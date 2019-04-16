@@ -1,7 +1,7 @@
 # Predicting Interview Attendance
 Using a [Kaggle dataset](https://www.kaggle.com/vishnusraghavan/the-interview-attendance-problem/data), this project develops an application that performs the following steps in order to predict if a candidate will attend an interview.
 1. Preprocesses the raw data by cleaning and standardizing data fields that can be used as features in a predictive model. Creates two CSV files of labeled and unlabeled data (`preprocess/clean_data.py`).
-2. Splits the labeled dataset into a training and test set using an 80%/20% split. Trains and evaluates a classifier (i.e. SVM) with scikit-learn (`model/model.py`) using cross-validation for hyper-parameter tuning. Predicts interview attendance for candidates in the unlabeled dataset and writes the prediction results to a CSV file (`model/predict.py`).
+2. Splits the labeled dataset into a training and test set using an 80%/20% split. Trains and evaluates a classifier (i.e. SVM) with scikit-learn using cross-validation for hyper-parameter tuning. Predicts interview attendance for candidates in the unlabeled dataset and writes the prediction results to a CSV file (`model/model.py`) .
 
 ## Setup
 ### Clone the project repo
@@ -78,7 +78,6 @@ INFO | Wrote predictions for 94 candidates to predictor/data/predictions.csv
 ```
 
 NOTE: This will overwrite some of the existing data files and model artifacts in the container.
-
 
 ### Running Jupyter Notebooks
 To explore the raw or cleaned CSV files in the `predictor/data/` including `labeled.csv`, `unlabeled.csv`, and `predictions.csv`, launch a notebook from the container:
