@@ -18,7 +18,67 @@ Running the container will execute all steps necessary to build the predictive m
 ```
 docker run --rm -ti attendance-predictor
 ```
+Exepcted output:
+```
+08:35 $ docker run --rm -ti attendance-predictor
+INFO | APP_DIR set to predictor
+INFO | Writing new cleaned CSV with columns: ['candidate_id', 'client_name', 'industry_type', 'position_skillset', 'candidate_skillset', 'interview_type', 'gender', 'candidate_current_location', 'candidate_job_location', 'interview_venue', 'candidate_native_location', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'marital_status', 'attendance']
+INFO | Wrote 1140 records to predictor/data/labeled.csv.
+INFO | Wrote 94 records to predictor/data/unlabeled.csv.
+INFO | APP_DIR set to predictor
+INFO | Filled NAs of column client_name with STANDARD CHARTERED BANK
+INFO | Filled NAs of column industry_type with BFSI
+INFO | Filled NAs of column position_skillset with ROUTINE
+INFO | Filled NAs of column candidate_skillset with JAVA
+INFO | Filled NAs of column interview_type with SCHEDULED WALKIN
+INFO | Filled NAs of column gender with MALE
+INFO | Filled NAs of column candidate_current_location with CHENNAI
+INFO | Filled NAs of column candidate_job_location with CHENNAI
+INFO | Filled NAs of column interview_venue with CHENNAI
+INFO | Filled NAs of column candidate_native_location with CHENNAI
+INFO | Filled NAs of column q1 with YES
+INFO | Filled NAs of column q2 with YES
+INFO | Filled NAs of column q3 with YES
+INFO | Filled NAs of column q4 with YES
+INFO | Filled NAs of column q5 with YES
+INFO | Filled NAs of column q6 with YES
+INFO | Filled NAs of column q7 with YES
+INFO | Filled NAs of column marital_status with SINGLE
+INFO | Splitting labeled data into train and test set with 0/20 split
+INFO | Training set created with 912 rows and 130 features
+INFO | Test set created with 228 rows and 130 features
+INFO | Fiting pipeline on training data set.........
+INFO | ---------------------------
+INFO | Test Set Evaluation Metrics
+INFO | ---------------------------
+INFO | Accuracy: 0.7192982456140351
+INFO | AUC: 0.6177748078850652
+INFO | Average Precision: 0.69973458020555
+INFO | Writing svm-model-04-16-2019.joblib to predictor/model/exported/
+INFO | Making predictions on unlabeled data.........
+INFO | Filled NAs of column client_name with STANDARD CHARTERED BANK
+INFO | Filled NAs of column industry_type with BFSI
+INFO | Filled NAs of column position_skillset with ROUTINE
+INFO | Filled NAs of column candidate_skillset with JAVA
+INFO | Filled NAs of column interview_type with SCHEDULED WALKIN
+INFO | Filled NAs of column gender with MALE
+INFO | Filled NAs of column candidate_current_location with CHENNAI
+INFO | Filled NAs of column candidate_job_location with CHENNAI
+INFO | Filled NAs of column interview_venue with CHENNAI
+INFO | Filled NAs of column candidate_native_location with CHENNAI
+INFO | Filled NAs of column q1 with YES
+INFO | Filled NAs of column q2 with YES
+INFO | Filled NAs of column q3 with YES
+INFO | Filled NAs of column q4 with YES
+INFO | Filled NAs of column q5 with YES
+INFO | Filled NAs of column q6 with YES
+INFO | Filled NAs of column q7 with YES
+INFO | Filled NAs of column marital_status with SINGLE
+INFO | Wrote predictions for 94 candidates to predictor/data/predictions.csv
+```
+
 NOTE: This will overwrite some of the existing data files and model artifacts in the container.
+
 
 ### Running Jupyter Notebooks
 To explore the raw or cleaned CSV files in the `predictor/data/` including `labeled.csv`, `unlabeled.csv`, and `predictions.csv`, launch a notebook from the container:
@@ -31,7 +91,7 @@ docker run -it -p 8888:8888 attendance-predictor
 cd predictor
 jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
 ```
-3. Follow the prompt (`To access the notebook, open this file in a browser:...`) and copy the URL into a browser tab.
+3. Follow the instructions beneath the prompt (_To access the notebook, open this file in a browser:..._) and copy the URL into a browser tab.
 
 ### Development
 To make development faster, volume mount the `app` directory over the one in the container:
@@ -41,7 +101,7 @@ docker run --rm -v `pwd`/predictor:/predictor -ti attendance-predictor /bin/bash
 This enables edits made locally to be reflected in the container and be quickly tested and run.
 
 ### Testing
-To run unit tests, run `pytest` in the repository.
+To run unit tests, run `pytest` within the project.
 ```
 root@4689da80e66d:/predictor# pytest
 ========================================================================= test session starts =========================================================================
@@ -56,13 +116,10 @@ tests/preprocess/test_clean_data.py ......                                      
 
 ## Model
 
-### Evaluating Model Performance
-A client has scored a candidate with your model and it gave the candidate a 30% chance of attending the interview. However, the candidate did come to the interview. The client would like to know why there is this apparent discrepancy in your model. How would you explain this occurrence? Could you provide a better way for the client to evaluate your model's performance?
+### Explaining Model Performance
+Probability is a measure of how likely an event is to occur. However, the interpretation of specific probabilities can be subjective depending on the person interpreting the value. For example, a probability of 30% could be interpreted as falling into different areas of possiblity, such as "probably not" or "highly doubtful" depending on the interpreter if the information is provided in a context that lacks agreed upon definitions mapping mathematical odds to commonly used phrases of probability. While a 30% chance of attendance may be casually understood as an indication that a candidate is highly unlikely to attend, another perspective is that over the long-run or given a larger sample size given a candidate and position with the same set of attributes, we'd expect the candidate to attend the interiew approximately 30 times out of 100.
 
-Probability is a measure of how likely an event is to occur. However, the interpretation of specific probabilities can be subjective depending on the person interpreting the value. For example, a probability of 30% could be interpreted as falling into different areas of possiblity, such as "probably not" or "highly doubtful" depending on the interpreter if the information is provided in a context that lacks agreed upon definitions mapping mathematical odds to commonly used phrases of probability. While a 30% chance of attendance may be interpreted by the hiring manager as meaning the candidate is highly unlikely to attend, another perspective  is that over the long-run given a candidate and position with the same set of attributes, we'd expect the candidate to attend the interiew approximately 30 times out of 100.
-
-Given the inherent subjectivity in interpreting probabilities for disparate use cases, constructing a confusion matrix for the model enables us to better understand and evaluate model performance than the probability of attendance generated by the model alone. The confusion matrix tabulates the false positives, false negatives, true positives, and true negatives generated by the model, which we can then use to calculate more meaningful statistics such as precision and recall for the model. For example, if users are particularly sensitive to expected "no-show" candidates arriving onsite, that is, false negatives, we will want to track recall and attempt to lower the probability threshold used to predict attendance.
-
+Given the inherent subjectivity in interpreting probabilities for disparate use cases, constructing a confusion matrix for the model enables us to better understand and evaluate model performance than the probability of attendance generated by the model alone. The confusion matrix tabulates the false positives, false negatives, true positives, and true negatives generated by the model, which we can then use to calculate more meaningful statistics such as precision and recall. For example, if users are particularly sensitive to expected "no-show" candidates arriving onsite, or false negatives, we'll want to track recall and attempt to lower the probability threshold used to predict attendance. Mention AUC, PR curve
 
 ## Resources
 * [Words of Estimative Probability - CIA Library](https://www.cia.gov/library/center-for-the-study-of-intelligence/csi-publications/books-and-monographs/sherman-kent-and-the-board-of-national-estimates-collected-essays/6words.html)
