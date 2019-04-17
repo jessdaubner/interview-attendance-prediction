@@ -76,7 +76,8 @@ INFO | Filled NAs of column q5 with YES
 INFO | Filled NAs of column q6 with YES
 INFO | Filled NAs of column q7 with YES
 INFO | Filled NAs of column marital_status with SINGLE
-INFO | Wrote predictions for 93 candidates to predictor/data/predictions.csv```
+INFO | Wrote predictions for 93 candidates to predictor/data/predictions.csv
+```
 
 NOTE: This will overwrite some of the existing data files and model artifacts in the container.
 
