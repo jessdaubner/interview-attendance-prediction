@@ -7,6 +7,9 @@ Using a [Kaggle dataset](https://www.kaggle.com/vishnusraghavan/the-interview-at
 ### Clone the project repo
 `git clone git@github.com:jessdaubner/attendance-predictor.git`
 
+### Configure `.envrc`
+This project contains an `.envrc` file to specify the `APP_DIR` and `PYTHONPATH` for running the app outside of a container. It may need to be changed based on your local setup since the file included expects this repo to exist under `~/dev/`. DirEnv is the bash utility that will run a bash script when you `cd` into a directory that contains an `.envrc` file, and its current security settings require that you approve each new or changed file manually by running `direnv allow`.
+
 ### Build & Run the App
 Download and install [Docker](https://www.docker.com/get-started) and build the app locally:
 ```bash
@@ -18,9 +21,9 @@ Running the container will execute all steps necessary to build the predictive m
 ```
 docker run --rm -ti attendance-predictor
 ```
-Exepcted output:
+Expected output:
 ```
-08:35 $ docker run --rm -ti attendance-predictor
+$ docker run --rm -ti attendance-predictor
 INFO | APP_DIR set to predictor
 INFO | Writing new cleaned CSV with columns: ['candidate_id', 'client_name', 'industry_type', 'position_skillset', 'candidate_skillset', 'interview_type', 'gender', 'candidate_current_location', 'candidate_job_location', 'interview_venue', 'candidate_native_location', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'marital_status', 'attendance']
 INFO | Wrote 1140 records to predictor/data/labeled.csv.
@@ -44,6 +47,7 @@ INFO | Filled NAs of column q5 with YES
 INFO | Filled NAs of column q6 with YES
 INFO | Filled NAs of column q7 with YES
 INFO | Filled NAs of column marital_status with SINGLE
+INFO | Converting categorical variables into dummy variables
 INFO | Splitting labeled data into train and test set with 80/20 split
 INFO | Training set created with 912 rows and 130 features
 INFO | Test set created with 228 rows and 130 features
@@ -51,12 +55,13 @@ INFO | Fiting pipeline on training data set.........
 INFO | ---------------------------
 INFO | Test Set Evaluation Metrics
 INFO | ---------------------------
-INFO | Accuracy: 0.719298
-INFO | Baseline Accuracy: 0.640351
-INFO | AUC: 0.617775
-INFO | Average Precision: 0.699735
+INFO | Baseline Accuracy: 0.64
+INFO | Accuracy: 0.72
+INFO | Precision: 0.70
+INFO | Recall: 0.99
+INFO | AUC: 0.62
 INFO | ---------------------------
-INFO | Writing svm-model-04-16-2019.joblib to predictor/model/exported/
+INFO | Writing svm-model-04-29-2019.joblib to predictor/model/exported/
 INFO | Making predictions on unlabeled data.........
 INFO | Filled NAs of column client_name with STANDARD CHARTERED BANK
 INFO | Filled NAs of column industry_type with BFSI
@@ -76,20 +81,95 @@ INFO | Filled NAs of column q5 with YES
 INFO | Filled NAs of column q6 with YES
 INFO | Filled NAs of column q7 with YES
 INFO | Filled NAs of column marital_status with SINGLE
+INFO | Converting categorical variables into dummy variables
 INFO | Wrote predictions for 93 candidates to predictor/data/predictions.csv
 ```
 
-NOTE: This will overwrite some of the existing data files and model artifacts in the container.
+Alternatively, this code can be run outside of a container:
+```
+cd attendance-predictor
+python predictor/model/model.py --predict
+```
+NOTE: This will overwrite some of the existing CSV data files and model artifacts in the container.
+
+Similarly for hyperparameter-tuning `python predictor/model/model.py --tune --metric precision` produces:
+```
+INFO | Grid scores on training set:
+INFO | 0.713 (+/-%0.1) for {'svc__C': 1, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.713 (+/-%0.1) for {'svc__C': 1, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.713 (+/-%0.1) for {'svc__C': 1, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 1, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 1, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 1, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | 0.713 (+/-%0.1) for {'svc__C': 1, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.713 (+/-%0.1) for {'svc__C': 1, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.713 (+/-%0.1) for {'svc__C': 1, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 1, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 1, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 1, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 10, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 10, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 10, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.799 (+/-%0.142) for {'svc__C': 10, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.799 (+/-%0.142) for {'svc__C': 10, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.799 (+/-%0.142) for {'svc__C': 10, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 10, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 10, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 10, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 10, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 10, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.32 (+/-%0.00246) for {'svc__C': 10, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 100, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 100, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 100, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.75 (+/-%0.145) for {'svc__C': 100, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.75 (+/-%0.145) for {'svc__C': 100, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.75 (+/-%0.145) for {'svc__C': 100, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 100, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 100, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 100, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.799 (+/-%0.142) for {'svc__C': 100, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.799 (+/-%0.142) for {'svc__C': 100, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.799 (+/-%0.142) for {'svc__C': 100, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 1000, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 1000, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 1000, 'svc__gamma': 0.001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.714 (+/-%0.11) for {'svc__C': 1000, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.714 (+/-%0.11) for {'svc__C': 1000, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.714 (+/-%0.11) for {'svc__C': 1000, 'svc__gamma': 0.001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 1000, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.01}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 1000, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.001}
+INFO | 0.706 (+/-%0.116) for {'svc__C': 1000, 'svc__gamma': 0.0001, 'svc__kernel': 'linear', 'svc__tol': 0.0001}
+INFO | 0.75 (+/-%0.145) for {'svc__C': 1000, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.01}
+INFO | 0.75 (+/-%0.145) for {'svc__C': 1000, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.001}
+INFO | 0.75 (+/-%0.145) for {'svc__C': 1000, 'svc__gamma': 0.0001, 'svc__kernel': 'rbf', 'svc__tol': 0.0001}
+INFO | Classification report:
+INFO |               precision    recall  f1-score   support
+
+           0       0.94      0.20      0.32        82
+           1       0.69      0.99      0.81       146
+
+   micro avg       0.71      0.71      0.71       228
+   macro avg       0.81      0.59      0.57       228
+weighted avg       0.78      0.71      0.64       228
+
+INFO | Best parameters:
+INFO | C: 10
+INFO | gamma: 0.001
+INFO | kernel: rbf
+INFO | tol: 0.01
+```
 
 ### Running Jupyter Notebooks
+NOTE: This needs to be updated to configure a token or password for Jupyter.
+
 To explore the raw or cleaned CSV files in the `predictor/data/` including `labeled.csv`, `unlabeled.csv`, and `predictions.csv`, launch a notebook from the container:
 1. Run the container as follows:
 ```bash
-docker run -it -p 8888:8888 attendance-predictor
+docker run -it -p 8888:8888 attendance-predictor /bin/bash
 ```
 2. At the command prompt inside the container:
 ```bash
-cd predictor
 jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
 ```
 3. Follow the instructions beneath the prompt (_To access the notebook, open this file in a browser:..._) and copy the URL into a browser tab.
@@ -125,13 +205,27 @@ Given the inherent subjectivity in interpreting probabilities for disparate use 
 ## API
 Managed services like AWS SageMaker or GCP's ML Engine can be used to create a scalable RESTful API for inference. Specifically, a trained scikit-learn pipeline can be saved as a pickle or joblib file and uploaded to S3 or Cloud Storage. In the case of AWS SageMaker, the exported model parameters can be injected into SageMaker's first-party containers for prediction. Then a SageMaker endpoint specifying the hosted model and resources to be deployed can be configured and created to serve the model and receive inference requests. In Python, these steps can be executed using `boto3`, the low-level AWS SDK, or `sagemaker`, a high-level library for deploying models on SageMaker.
 
+## Next Steps
+* Re-examine assumptions made during initial pre-processing. For example, try to lose less information with `candidate_skillset` with a word embedding or a hashed categorical feature and add a "maybe" or "unknown" feature to non-commital question responses instead of labelling them "No".
+* Alternatives to `pd.get_dummies()` such as `OneHotEncoding`
+* More robust `Pipeline()` for cross-validation (current cross-validation didn't include `PolynomialFeatures`). Possibly `StratifiedKFolds` instead of `CVGrid` and instead of stratified sampling for train-test split.
+* Use SVC estimator's `sample_weight` to emphasize examples that have a pattern of misclassification with the current model
+* Explore alternative scikit-learn classifiers to improve AUC such as KNeighbors, Random Forest, or XGBoost.
+* Create `entrypoint.sh` to run container in different modes (e.g., "predict", "tune", "jupyter", "test")
+* Test deploying trained model with `sagemaker.predict()` or `boto3`
+  * Look into pre-configured SageMaker containers
+
 ## Resources
 * [Words of Estimative Probability - CIA Library](https://www.cia.gov/library/center-for-the-study-of-intelligence/csi-publications/books-and-monographs/sherman-kent-and-the-board-of-national-estimates-collected-essays/6words.html)
+* [Create a model for predicting orthopedic pathology using Amazon SageMaker](https://aws.amazon.com/blogs/machine-learning/create-a-model-for-predicting-orthopedic-pathology-using-amazon-sagemaker/)
 
 ### API
 * [AWS SageMaker Python SDK](https://github.com/aws/sagemaker-python-sdk)
 * [Deploy the Model to Amazon SageMaker Hosting Services](https://docs.aws.amazon.com/sagemaker/latest/dg/ex1-deploy-model.html)
 * [GCP - Predictions with scikit-learn pipelines](https://cloud.google.com/ml-engine/docs/scikit/using-pipelines)
+* [Train and host Scikit-Learn models in Amazon SageMaker by building a Scikit Docker container](https://aws.amazon.com/blogs/machine-learning/train-and-host-scikit-learn-models-in-amazon-sagemaker-by-building-a-scikit-docker-container/)
+* [SageMaker Examples](https://github.com/awslabs/amazon-sagemaker-examples)
+* [Amazon SageMaker Workshop](https://sagemaker-workshop.com/)
 
 ### Scikit Learn
 * [Parameter estimation using grid search with cross-validation](https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html)
