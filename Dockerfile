@@ -11,8 +11,9 @@ ENV APP_DIR="predictor"
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r predictor/requirements.txt
 
-# Run program to build model when the container launches
-CMD python predictor/preprocess/clean_data.py && python predictor/model/model.py
+ENTRYPOINT ["/predictor/entrypoint.sh"]
+
+CMD ["test"]
 
 # Set the working directory to /predictor
 WORKDIR predictor/
