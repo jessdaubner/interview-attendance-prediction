@@ -10,7 +10,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import classification_report, \
-    accuracy_score, roc_curve, average_precision_score, auc
+    accuracy_score, roc_curve, auc, precision_score, recall_score
 
 from predictor.config import logger, LABELED_DATA, LABEL, \
     MODEL_DIR, FEATURES, UNLABELED_DATA, PREDICTIONS
@@ -32,6 +32,7 @@ def impute_missing_values(df):
 
 def transform(df):
     """Transform categorical features into numerical representations."""
+    logger.info('Converting categorical variables into dummy variables')
     return pd.get_dummies(df, columns=FEATURES)
 
 
@@ -73,38 +74,48 @@ def create_train_test_datasets(df, test_size):
     return x_train, x_test, y_train, y_test
 
 
-def tune_hyperparameters(x_train, x_test, y_train, y_test):
+def tune_hyperparameters(x_train, x_test, y_train, y_test, metric):
     """Use cross-validation and grid search to find optimal
        hyper-parameters to find the best parameters on
        the training set.
+     Args:
+       metric (str): evaluation metric to optimize for
     """
-    parameters = [{'kernel': ['rbf'],
-                   'gamma': [1e-3, 1e-4],
-                   'C': [1, 10, 100, 1000],
-                   'tol': [1e-2, 1e-3, 1e-4]},
-                  {'kernel': ['linear'],
-                   'C': [1, 10, 100, 1000],
-                   'tol': [1e-2, 1e-3, 1e-4]}]
+    pipeline = Pipeline([
+        # NOTE: CV is takes a while when PolynomialFeatures are included
+        # ('features', PolynomialFeatures()),
+        ('svc', SVC())
+    ])
 
-    for metric in ['precision', 'recall']:
-        logger.info(f"Tuning hyper-parameters for {metric}")
-        clf = GridSearchCV(SVC(), parameters, cv=6, scoring=f'{metric}_macro')
-        clf.fit(x_train, y_train)
+    parameters = {
+        # 'features__degree': [2],
+        # 'features__include_bias': (True, False),
+        # 'features__interaction_only': (True, False),
+        'svc__kernel': ['linear', 'rbf'],
+        'svc__gamma': [1e-3, 1e-4],
+        'svc__C': [1, 10, 100, 1000],
+        'svc__tol': [1e-2, 1e-3, 1e-4]
+    }
 
-        best_params = clf.best_params_
-        logger.info(f"Best parameters:")
-        for metric, value in best_params.items():
-            logger.info(f"{metric}: {value}")
+    logger.info(f"Tuning hyper-parameters for {metric}")
+    clf = GridSearchCV(pipeline, parameters, cv=10, scoring=f'{metric}_macro')
+    clf.fit(x_train, y_train)
 
-        logger.info("Grid scores on training set:")
-        means = clf.cv_results_['mean_test_score']
-        stds = clf.cv_results_['std_test_score']
-        for mean, std, params in zip(means, stds, clf.cv_results_['params']):
-            logger.info(f"{mean:.3} (+/-%{std*2:.3}) for {params}")
-        logger.info("Classification report:")
-        y_true, y_pred = y_test, clf.predict(x_test)
-        logger.info(classification_report(y_true, y_pred))
-        return best_params
+    best_params = clf.best_params_
+
+    logger.info("Grid scores on training set:")
+    means = clf.cv_results_['mean_test_score']
+    stds = clf.cv_results_['std_test_score']
+    for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+        logger.info(f"{mean:.3} (+/-%{std*2:.3}) for {params}")
+    logger.info("Classification report:")
+    y_true, y_pred = y_test, clf.predict(x_test)
+    logger.info(classification_report(y_true, y_pred))
+    best_params = {param.split('__')[1]: value for param, value in best_params.items()}
+    logger.info(f"Best parameters:")
+    for metric, value in best_params.items():
+        logger.info(f"{metric}: {value}")
+    return best_params
 
 
 def calculate_metrics(y_pred, y_true):
@@ -114,22 +125,30 @@ def calculate_metrics(y_pred, y_true):
     logger.info(log_msg)
     logger.info(len(log_msg) * '-')
 
-    accuracy = accuracy_score(y_true, y_pred)
-    logger.info(f'Accuracy: {accuracy:3f}')
-    baseline_accuracy = sum(y_true.values) / len(y_true.values)
-    logger.info(f'Baseline Accuracy: {baseline_accuracy:3f}')
+    baseline_accuracy = round(sum(y_true.values) / len(y_true.values), 3)
+    logger.info(f'Baseline Accuracy: {baseline_accuracy:.2f}')
+
+    metrics = {
+        'Accuracy': accuracy_score,
+        'Precision': precision_score,
+        'Recall': recall_score
+    }
+
+    for metric_name, metric_fn in metrics.items():
+        score = metric_fn(y_true, y_pred)
+        logger.info(f'{metric_name}: {score:.2f}')
+
     fpr, tpr, thresholds = roc_curve(y_true.values, y_pred, pos_label=1)
     auc_score = auc(fpr, tpr)
-    logger.info(f'AUC: {auc_score:3f}')
-    avg_precision = average_precision_score(y_true, y_pred)
-    logger.info(f'Average Precision: {avg_precision:3f}')
+    logger.info(f'AUC: {auc_score:.2f}')
     logger.info(len(log_msg) * '-')
 
 
-def train_and_evaluate(cross_validate):
+def train_and_evaluate(cross_validate, cv_metric=None):
     """Train and evaluate model
     Args:
       cross_validate (boolean): execute hyper-parameter tuning via grid search
+      cv_metric (str): metric to optimize/minimize during cross-valiation
     Returns:
       trained pipeline
     """
@@ -137,13 +156,13 @@ def train_and_evaluate(cross_validate):
     x_train, x_test, y_train, y_test = create_train_test_datasets(labeled_data, test_size=0.2)
 
     if cross_validate:
-        params = tune_hyperparameters(x_train, x_test, y_train, y_test)
+        params = tune_hyperparameters(x_train, x_test, y_train, y_test, metric=cv_metric)
     else:
         # Parameters learned from previous cross-validation run
         params = {'C': 10, 'gamma': 0.001, 'kernel': 'rbf', 'tol': 0.01}
 
     pipeline = Pipeline([
-        ('feature_interactions', PolynomialFeatures(degree=2)),
+        ('feature_interactions', PolynomialFeatures(interaction_only=True)),
         ('classifier', SVC(kernel=params['kernel'],
                            gamma=params['gamma'],
                            C=params['C'],
@@ -188,6 +207,7 @@ def make_predictions(pipeline, feature_cols):
                                 'Predicted Attendance': predicted_attendance,
                                 'Probability of Attendance': attendance_prob[:, 1]})
     predictions['Predicted Attendance'] = predictions['Predicted Attendance'].map({1: 'YES', 0: 'NO'})
+    predictions['Probability of Attendance'] = predictions['Probability of Attendance'].round(decimals=3)
     predictions.to_csv(path_or_buf=PREDICTIONS, index=False)
     n_pred = predictions.shape[0]
     logger.info(f'Wrote predictions for {n_pred} candidates to {PREDICTIONS}')
@@ -197,8 +217,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--tune', action='store_true',
                         help='Specify value only if hyper-parameter tuning should be executed')
+    parser.add_argument('--metric', default='precision',
+                        help='Specify metric to optimize for during hyper-parameter tuning')
+    parser.add_argument('--predict', action='store_true',
+                        help='Include if model artifact and predictions should be written')
 
-    arg = parser.parse_args()
-    pipeline, feature_columns = train_and_evaluate(cross_validate=arg.tune)
-    save_model(pipeline)
-    make_predictions(pipeline, feature_columns)
+    args = parser.parse_args()
+    pipeline, feature_columns = train_and_evaluate(cross_validate=args.tune,
+                                                   cv_metric=args.metric)
+    if args.predict:
+        save_model(pipeline)
+        make_predictions(pipeline, feature_columns)
