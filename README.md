@@ -8,7 +8,7 @@ Using a [Kaggle dataset](https://www.kaggle.com/vishnusraghavan/the-interview-at
 `git clone git@github.com:jessdaubner/attendance-predictor.git`
 
 ### Configure `.envrc`
-DirEnv is a bash utility that will run a bash script when you `cd` into a directory that contains an `.envrc` file. It's used to specify the `APP_DIR` and `PYTHONPATH` for running the app outside of a container and may need to be changed based on your local setup. You must approve each new or changed file manually by running `direnv allow`.
+This project contains an `.envrc` file to specify the `APP_DIR` and `PYTHONPATH` for running the app outside of a container. It may need to be changed based on your local setup since the file included expects this repo to exist under `~/dev/`. DirEnv is the bash utility that will run a bash script when you `cd` into a directory that contains an `.envrc` file, and its current security settings require that you approve each new or changed file manually by running `direnv allow`.
 
 ### Build & Run the App
 Download and install [Docker](https://www.docker.com/get-started) and build the app locally:
@@ -21,9 +21,9 @@ Running the container will execute all steps necessary to build the predictive m
 ```
 docker run --rm -ti attendance-predictor
 ```
-Exepcted output:
+Expected output:
 ```
- $ docker run --rm -ti attendance-predictor
+$ docker run --rm -ti attendance-predictor
 INFO | APP_DIR set to predictor
 INFO | Writing new cleaned CSV with columns: ['candidate_id', 'client_name', 'industry_type', 'position_skillset', 'candidate_skillset', 'interview_type', 'gender', 'candidate_current_location', 'candidate_job_location', 'interview_venue', 'candidate_native_location', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'marital_status', 'attendance']
 INFO | Wrote 1140 records to predictor/data/labeled.csv.
@@ -162,6 +162,7 @@ INFO | tol: 0.01
 
 ### Running Jupyter Notebooks
 NOTE: This needs to be updated to configure a token or password for Jupyter.
+
 To explore the raw or cleaned CSV files in the `predictor/data/` including `labeled.csv`, `unlabeled.csv`, and `predictions.csv`, launch a notebook from the container:
 1. Run the container as follows:
 ```bash
