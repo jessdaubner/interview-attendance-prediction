@@ -91,8 +91,8 @@ def tune_hyperparameters(x_train, x_test, y_train, y_test, metric):
         # 'features__degree': [2],
         # 'features__include_bias': (True, False),
         # 'features__interaction_only': (True, False),
-        'svc__kernel': ['linear', 'rbf'],
-        'svc__gamma': [1e-3, 1e-4],
+        'svc__kernel': ['linear', 'rbf', 'poly', 'sigmoid'],
+        'svc__gamma': ['scale', 1e-3, 1e-4],
         'svc__C': [1, 10, 100, 1000],
         'svc__tol': [1e-2, 1e-3, 1e-4]
     }
